@@ -3,7 +3,7 @@ module github.com/mt-sre/client
 go 1.17
 
 require (
-	github.com/cenkalti/backoff/v4 v4.1.2
+	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/go-logr/logr v0.4.0
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
