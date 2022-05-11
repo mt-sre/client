@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/mt-sre/client/internal/testutils"
+	"github.com/stretchr/testify/require"
 )
 
 // TestNewClient ensures a working http client is returned
@@ -25,7 +26,8 @@ func TestNewClient(t *testing.T) {
 		WithTransport{RoundTripper: mrt},
 	)
 
-	client.Get(context.Background(), "")
+	_, err := client.Get(context.Background(), "")
+	require.NoError(t, err)
 
 	mrt.AssertExpectations(t)
 }
