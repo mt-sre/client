@@ -7,6 +7,9 @@ import (
 	"net/http"
 )
 
+// NewClient returns an opionanted HTTP client which can be
+// optionally augmented with TransportWrappers which add
+// features such as retries with exponential backoff.
 func NewClient(opts ...ClientOption) *Client {
 	var cfg ClientConfig
 
@@ -28,38 +31,47 @@ type Client struct {
 	client *http.Client
 }
 
+// Get performs a HTTP GET request against the provided URL.
 func (c *Client) Get(ctx context.Context, url string) (*http.Response, error) {
 	return c.requestWithoutBody(ctx, http.MethodGet, url)
 }
 
+// Head performs a HTTP HEAD request against the provided URL.
 func (c *Client) Head(ctx context.Context, url string) (*http.Response, error) {
 	return c.requestWithoutBody(ctx, http.MethodHead, url)
 }
 
+// Post performs a HTTP POST request against the provided URL with the given body.
 func (c *Client) Post(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
 	return c.requestWithBody(ctx, http.MethodPost, url, nil)
 }
 
+// Put performs a HTTP PUT request against the provided URL with the given body.
 func (c *Client) Put(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
 	return c.requestWithBody(ctx, http.MethodPut, url, nil)
 }
 
+// Patch performs a HTTP PATCH request against the provided URL with the given body.
 func (c *Client) Patch(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
 	return c.requestWithBody(ctx, http.MethodPatch, url, nil)
 }
 
+// Delete performs a HTTP DELETE request against the provided URL.
 func (c *Client) Delete(ctx context.Context, url string) (*http.Response, error) {
 	return c.requestWithoutBody(ctx, http.MethodDelete, url)
 }
 
+// Connect performs a HTTP CONNECT request against the provided URL with the given body.
 func (c *Client) Connect(ctx context.Context, url string, body io.Reader) (*http.Response, error) {
 	return c.requestWithBody(ctx, http.MethodConnect, url, nil)
 }
 
+// Options performs a HTTP OPTIONS request against the provided URL.
 func (c *Client) Options(ctx context.Context, url string) (*http.Response, error) {
 	return c.requestWithoutBody(ctx, http.MethodOptions, url)
 }
 
+// Trace performs a HTTP TRACE request against the provided URL.
 func (c *Client) Trace(ctx context.Context, url string) (*http.Response, error) {
 	return c.requestWithoutBody(ctx, http.MethodTrace, url)
 }
@@ -108,18 +120,29 @@ type ClientOption interface {
 	ConfigureClient(*ClientConfig)
 }
 
+// WithTransport configures a Client instance with the given
+// http.RoundTripper instance.
 type WithTransport struct{ http.RoundTripper }
 
 func (t WithTransport) ConfigureClient(c *ClientConfig) {
 	c.Transport = t.RoundTripper
 }
 
+// WithWrapper configures a Client instance with the given
+// TransportWrapper. This option can be provided multiple
+// times to apply several TransportWrappers. The order in
+// which the TransportWrappers is applied is important!
 type WithWrapper struct{ TransportWrapper }
 
 func (ww WithWrapper) ConfigureClient(c *ClientConfig) {
 	c.Wrappers = append(c.Wrappers, ww.TransportWrapper)
 }
 
+// TransportWrapper adds functionality to a http.RoundTripper
+// by adding pre and post call execution steps.
 type TransportWrapper interface {
+	// Wrap return a http.RoundTripper which has been
+	// wrapped with the pre and post functionality the
+	// TransportWrapper provides.
 	Wrap(http.RoundTripper) http.RoundTripper
 }
