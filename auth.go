@@ -6,6 +6,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// NewOAUTHWrapper returns a TransportWrapper which adds
+// OAUTH2 authentication to a HTTP transport.
 func NewOAUTHWrapper(opts ...OAUTHOption) *OAUTHWrapper {
 	var cfg OAUTHConfig
 
@@ -46,6 +48,8 @@ type OAUTHOption interface {
 	ConfigureOAUTH(*OAUTHConfig)
 }
 
+// WithAccessToken configures a OAUTHWrapper with an OAUTH2 token
+// used when making requests.
 type WithAccessToken string
 
 func (at WithAccessToken) ConfigureOAUTH(c *OAUTHConfig) {

@@ -14,6 +14,10 @@ import (
 
 var errTemporary = errors.New("temporary error occurred")
 
+// NewRetryWrapper returns a TransportWrapper which detects whether
+// a HTTP request should be retried given a particular failure scenario.
+// A variadic slice of options can be provided to configure the retry
+// behavior from default.
 func NewRetryWrapper(opts ...RetryWrapperOption) *RetryWrapper {
 	var cfg RetryWrapperConfig
 
@@ -173,18 +177,23 @@ type RetryWrapperOption interface {
 	ConfigureRetryWrapper(*RetryWrapperConfig)
 }
 
+// WithLogger configures a RetryWrapper instance with the provided
+// logr.Logger instance.
 type WithLogger struct{ logr.Logger }
 
 func (l WithLogger) ConfigureRetryWrapper(c *RetryWrapperConfig) {
 	c.Logger = l.Logger
 }
 
+// WithBackoffGenerator configures a RetryWrapper instance with the
+// provided BackoffGenerator.
 type WithBackoffGenerator func() backoff.BackOff
 
 func (bg WithBackoffGenerator) ConfigureRetryWrapper(c *RetryWrapperConfig) {
 	c.GenerateBackoff = bg
 }
 
+// WithMaxRetries sets the maximum retry attempts for a RetryWrapper instance.
 type WithMaxRetries uint64
 
 func (mr WithMaxRetries) ConfigureRetryWrapper(c *RetryWrapperConfig) {
