@@ -160,7 +160,7 @@ func (c *RetryWrapperConfig) Option(opts ...RetryWrapperOption) {
 }
 
 func (c *RetryWrapperConfig) Default() {
-	if c.Logger == nil {
+	if c.Logger.GetSink() == nil {
 		c.Logger = logr.Discard()
 	}
 
