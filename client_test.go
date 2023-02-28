@@ -31,3 +31,15 @@ func TestNewClient(t *testing.T) {
 
 	mrt.AssertExpectations(t)
 }
+
+// TestClientConfig_default ensures that the transport field 
+// is set correctly
+func TestClientConfig_Default(t *testing.T) {
+    cfg := &ClientConfig{
+        Transport: nil,
+    }
+    cfg.Default()
+    if cfg.Transport != http.DefaultTransport {
+        t.Errorf("Expected Transport to be set to http.DefaultTransport, got %v", cfg.Transport)
+    }
+}
