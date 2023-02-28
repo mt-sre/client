@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/stretchr/testify/assert"
 )
 
 // TestWithRandomizationFactor_ConfigureExponentialBackoff checks if the WithRandomizationFactor
@@ -15,9 +16,7 @@ func TestWithRandomizationFactor_ConfigureExponentialBackoff(t *testing.T) {
 	rf := WithRandomizationFactor(0.5)
 	rf.ConfigureExponentialBackoff(bo)
 
-	if bo.RandomizationFactor != 0.5 {
-		t.Errorf("RandomizationFactor not set properly. Expected %f, got %f", 0.5, bo.RandomizationFactor)
-	}
+	assert.Equal(t, 0.5, bo.RandomizationFactor, "RandomizationFactor not set properly")
 }
 
 // TestWithMultiplierConfigureExponentialBackoff ensures that the ConfigureExponentialBackoff
@@ -28,7 +27,5 @@ func TestWithMultiplierConfigureExponentialBackoff(t *testing.T) {
 	w := WithMultiplier(2.0)
 	w.ConfigureExponentialBackoff(bo)
 
-	if bo.Multiplier != 2.0 {
-		t.Errorf("Expected multiplier to be 2.0, but got %v", bo.Multiplier)
-	}
+	assert.Equal(t, 2.0, bo.Multiplier, "Multiplier not set properly")
 }

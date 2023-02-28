@@ -39,7 +39,6 @@ func TestClientConfig_Default(t *testing.T) {
 		Transport: nil,
 	}
 	cfg.Default()
-	if cfg.Transport != http.DefaultTransport {
-		t.Errorf("Expected Transport to be set to http.DefaultTransport, got %v", cfg.Transport)
-	}
+
+	require.Equal(t, http.DefaultTransport, cfg.Transport, "Transport is not set to http.DefaultTransport")
 }

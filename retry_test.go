@@ -210,38 +210,61 @@ func TestRoundTripConcurrencySafety(t *testing.T) {
 // method of DefaultRetryPolicy behaves as expected, correctly identifying
 // retryable and non-retryable errors.
 func TestDefaultRetryPolicy_IsErrorRetryable(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    error
+		expected bool
+	}{
+		{
+			name:     "nil error",
+			input:    nil,
+			expected: true,
+		},
+		{
+			name:     "retryable error",
+			input:    errors.New("connection refused"),
+			expected: true,
+		},
+		{
+			name:     "non-retryable error",
+			input:    errors.New("unknown error"),
+			expected: false,
+		},
+	}
+
 	policy := DefaultRetryPolicy{}
 
-	err := (error)(nil)
-	if !policy.IsErrorRetryable(err) {
-		t.Errorf("IsErrorRetryable(nil) = false; want true")
-	}
-
-	err = errors.New("connection refused")
-	if !policy.IsErrorRetryable(err) {
-		t.Errorf("IsErrorRetryable(%v) = false; want true", err)
-	}
-
-	err = errors.New("unknown error")
-	if policy.IsErrorRetryable(err) {
-		t.Errorf("IsErrorRetryable(%v) = true; want false", err)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := policy.IsErrorRetryable(tc.input)
+			assert.Equal(t, tc.expected, actual)
+		})
 	}
 }
 
 // TestMsgInRetryPatterns tests the msgInRetryPatterns fuction.
 func TestMsgInRetryPatterns(t *testing.T) {
-	// Test to check if message is in retry patterns
-	msg := "connection refused"
-	result := msgInRetryPatterns(msg)
-	if !result {
-		t.Errorf("msgInRetryPatterns(%q) = false; want true", msg)
+	testCases := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{
+			name:     "Connection refused",
+			input:    "connection refused",
+			expected: true,
+		},
+		{
+			name:     "Unknown error",
+			input:    "unknown error",
+			expected: false,
+		},
 	}
 
-	// Test to check if message is not in retry patterns
-	msg = "unknown error"
-	result = msgInRetryPatterns(msg)
-	if result {
-		t.Errorf("msgInRetryPatterns(%q) = true; want false", msg)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, msgInRetryPatterns(tc.input))
+		})
 	}
 }
 
@@ -252,30 +275,22 @@ func TestClientTrace(t *testing.T) {
 
 	// Modify the handler to handle TRACE requests
 	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodTrace {
-			http.Error(w, "Expected TRACE method", http.StatusBadRequest)
-			return
-		}
+		require.Equal(t, http.MethodTrace, r.Method, "Unexpected HTTP method")
 
 		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte("TRACE request received")); err != nil {
-			t.Fatalf("Error writing response body: %v", err)
-		}
+		_, err := w.Write([]byte("TRACE request received"))
+		assert.NoError(t, err, "Error writing response body")
 	})
 
 	// Create a new client instance and make a TRACE request to the test server
 	client := NewClient()
 
 	resp, err := client.Trace(context.Background(), srv.URL)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
+	require.NoError(t, err, "Unexpected error")
 	defer resp.Body.Close()
 
 	// Verify that the response status code is as expected
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
-	}
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "Unexpected status code")
 }
 
 // TestClientOptions tests the behavior of the Options method of a client instance and
@@ -284,30 +299,21 @@ func TestClientTrace(t *testing.T) {
 func TestClientOptions(t *testing.T) {
 	srv := testutils.ServerFixture()
 	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodOptions {
-			http.Error(w, "Expected OPTIONS method", http.StatusBadRequest)
-			return
-		}
-
+		require.Equal(t, http.MethodOptions, r.Method, "Unexpected HTTP method")
 		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte("OPTIONS request received")); err != nil {
-			t.Fatalf("Error writing response body: %v", err)
-		}
+		_, err := w.Write([]byte("OPTIONS request received"))
+		require.NoError(t, err, "Error writing response body")
 	})
 	defer srv.Close()
 
 	client := NewClient()
 
 	resp, err := client.Options(context.Background(), srv.URL)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
+	require.NoError(t, err, "Unexpected error")
 	defer resp.Body.Close()
 
 	// Verify that the response status code is as expected
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
-	}
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "Unexpected status code")
 }
 
 // TestClientConnect tests the Connect method of the Client struct. It ensures
@@ -316,30 +322,21 @@ func TestClientOptions(t *testing.T) {
 func TestClientConnect(t *testing.T) {
 	srv := testutils.ServerFixture()
 	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodConnect {
-			http.Error(w, "Expected CONNECT method", http.StatusBadRequest)
-			return
-		}
-
+		require.Equal(t, http.MethodConnect, r.Method, "Expected CONNECT method")
 		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte("CONNECT request received")); err != nil {
-			t.Fatalf("Error writing response body: %v", err)
-		}
+		_, err := w.Write([]byte("CONNECT request received"))
+		require.NoError(t, err)
 	})
 	defer srv.Close()
 
 	client := NewClient()
 
 	resp, err := client.Connect(context.Background(), srv.URL, nil)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
+	require.NoError(t, err, "Unexpected error")
 	defer resp.Body.Close()
 
 	// Verify that the response status code is as expected
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
-	}
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "Unexpected status code")
 }
 
 // TestClientDelete tests the Delete method of a HTTP client.
@@ -347,28 +344,19 @@ func TestClientDelete(t *testing.T) {
 	srv := testutils.ServerFixture()
 
 	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodDelete {
-			http.Error(w, "Expected DELETE method", http.StatusBadRequest)
-			return
-		}
-
+		require.Equal(t, http.MethodDelete, r.Method, "Expected DELETE method")
 		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte("DELETE request received")); err != nil {
-			t.Fatalf("Error writing response body: %v", err)
-		}
+		_, err := w.Write([]byte("DELETE request received"))
+		require.NoError(t, err)
 	})
 
 	defer srv.Close()
 
 	client := NewClient()
 	resp, err := client.Delete(context.Background(), srv.URL)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
+	require.NoError(t, err, "Unexpected error")
 	defer resp.Body.Close()
 
 	// Verify that the response status code is as expected
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
-	}
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "Unexpected status code")
 }
