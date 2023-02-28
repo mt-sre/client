@@ -258,7 +258,9 @@ func TestClientTrace(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("TRACE request received"))
+		if _, err := w.Write([]byte("TRACE request received")); err != nil {
+			t.Fatalf("Error writing response body: %v", err)
+		}
 	})
 
 	// Create a new client instance and make a TRACE request to the test server
@@ -288,7 +290,9 @@ func TestClientOptions(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OPTIONS request received"))
+		if _, err := w.Write([]byte("OPTIONS request received")); err != nil {
+			t.Fatalf("Error writing response body: %v", err)
+		}
 	})
 	defer srv.Close()
 
@@ -318,7 +322,9 @@ func TestClientConnect(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("CONNECT request received"))
+		if _, err := w.Write([]byte("CONNECT request received")); err != nil {
+			t.Fatalf("Error writing response body: %v", err)
+		}
 	})
 	defer srv.Close()
 
@@ -347,7 +353,9 @@ func TestClientDelete(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("DELETE request received"))
+		if _, err := w.Write([]byte("DELETE request received")); err != nil {
+			t.Fatalf("Error writing response body: %v", err)
+		}
 	})
 
 	defer srv.Close()
