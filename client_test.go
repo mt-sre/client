@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -172,7 +172,7 @@ func TestClientHead(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Verify that the response body is empty.
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	assert.Empty(t, body)
 }
@@ -188,7 +188,7 @@ func TestClientPatch(t *testing.T) {
 	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPatch, r.Method)
 
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		assert.Empty(t, body)
 
@@ -205,7 +205,7 @@ func TestClientPatch(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Verify that the response body matches the expected value.
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	assert.Equal(t, "test\n", string(body))
 }
