@@ -3,12 +3,14 @@ package client
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/mt-sre/client/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -203,4 +205,90 @@ func TestRoundTripConcurrencySafety(t *testing.T) {
 
 		assert.GreaterOrEqual(t, res.Delay, initialDelay, res.Res)
 	}
+}
+
+// TestDefaultRetryPolicy_IsErrorRetryable ensures that the IsErrorRetryable
+// method of DefaultRetryPolicy behaves as expected, correctly identifying
+// retryable and non-retryable errors.
+func TestDefaultRetryPolicy_IsErrorRetryable(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name     string
+		input    error
+		expected bool
+	}{
+		{
+			name:     "nil error",
+			input:    nil,
+			expected: true,
+		},
+		{
+			name:     "retryable error",
+			input:    errors.New("connection refused"),
+			expected: true,
+		},
+		{
+			name:     "non-retryable error",
+			input:    errors.New("unknown error"),
+			expected: false,
+		},
+	}
+
+	policy := DefaultRetryPolicy{}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			actual := policy.IsErrorRetryable(tc.input)
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
+}
+
+// TestMsgInRetryPatterns tests the msgInRetryPatterns fuction.
+func TestMsgInRetryPatterns(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{
+			name:     "Connection refused",
+			input:    "connection refused",
+			expected: true,
+		},
+		{
+			name:     "Unknown error",
+			input:    "unknown error",
+			expected: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.expected, msgInRetryPatterns(tc.input))
+		})
+	}
+}
+
+// TestWithLogger_configureRetryWrapper checks that the method correctly sets
+// the Logger field of a RetryWrapperConfig instance to the logger instance
+// sepcified by the WithLogger instance.
+func TestWithLogger_ConfigureRetryWrapper(t *testing.T) {
+	t.Parallel()
+
+	logger := logr.Discard()
+
+	withLogger := WithLogger{Logger: logger}
+
+	config := &RetryWrapperConfig{}
+
+	withLogger.ConfigureRetryWrapper(config)
+
+	// check that the Logger field is set to the logger instance
+	require.Equal(t, logger, config.Logger, "Logger field is not set correctly")
 }
