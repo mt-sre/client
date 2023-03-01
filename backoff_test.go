@@ -11,6 +11,8 @@ import (
 // function correctly sets the randomization factor of an ExponentialBackoff instance
 // when used with the ConfigureExponentialBackoff method.
 func TestWithRandomizationFactor_ConfigureExponentialBackoff(t *testing.T) {
+	t.Parallel()
+
 	bo := backoff.NewExponentialBackOff()
 
 	rf := WithRandomizationFactor(0.5)
@@ -22,6 +24,8 @@ func TestWithRandomizationFactor_ConfigureExponentialBackoff(t *testing.T) {
 // TestWithMultiplierConfigureExponentialBackoff ensures that the ConfigureExponentialBackoff
 // function correctly configures the ExponentialBackoff object with the desired multipler value.
 func TestWithMultiplierConfigureExponentialBackoff(t *testing.T) {
+	t.Parallel()
+
 	bo := backoff.NewExponentialBackOff()
 
 	w := WithMultiplier(2.0)

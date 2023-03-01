@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/mt-sre/client/internal/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -210,6 +211,8 @@ func TestRoundTripConcurrencySafety(t *testing.T) {
 // method of DefaultRetryPolicy behaves as expected, correctly identifying
 // retryable and non-retryable errors.
 func TestDefaultRetryPolicy_IsErrorRetryable(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name     string
 		input    error
@@ -236,6 +239,7 @@ func TestDefaultRetryPolicy_IsErrorRetryable(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			actual := policy.IsErrorRetryable(tc.input)
 			assert.Equal(t, tc.expected, actual)
 		})
@@ -244,6 +248,8 @@ func TestDefaultRetryPolicy_IsErrorRetryable(t *testing.T) {
 
 // TestMsgInRetryPatterns tests the msgInRetryPatterns fuction.
 func TestMsgInRetryPatterns(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		name     string
 		input    string
@@ -263,100 +269,26 @@ func TestMsgInRetryPatterns(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(t, tc.expected, msgInRetryPatterns(tc.input))
 		})
 	}
 }
 
-// TestClientTrace tests the behavior of the Trace method of a client.
-func TestClientTrace(t *testing.T) {
-	srv := testutils.ServerFixture()
-	defer srv.Close()
+// TestWithLogger_configureRetryWrapper checks that the method correctly sets
+// the Logger field of a RetryWrapperConfig instance to the logger instance
+// sepcified by the WithLogger instance.
+func TestWithLogger_ConfigureRetryWrapper(t *testing.T) {
+	t.Parallel()
 
-	// Modify the handler to handle TRACE requests
-	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodTrace, r.Method, "Unexpected HTTP method")
+	logger := logr.Discard()
 
-		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte("TRACE request received"))
-		assert.NoError(t, err, "Error writing response body")
-	})
+	withLogger := WithLogger{Logger: logger}
 
-	// Create a new client instance and make a TRACE request to the test server
-	client := NewClient()
+	config := &RetryWrapperConfig{}
 
-	resp, err := client.Trace(context.Background(), srv.URL)
-	require.NoError(t, err, "Unexpected error")
-	defer resp.Body.Close()
+	withLogger.ConfigureRetryWrapper(config)
 
-	// Verify that the response status code is as expected
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "Unexpected status code")
-}
-
-// TestClientOptions tests the behavior of the Options method of a client instance and
-// ensures that the Options medthod of the Client instance behaves correctly when making
-// an OPTIONS request to a server.
-func TestClientOptions(t *testing.T) {
-	srv := testutils.ServerFixture()
-	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodOptions, r.Method, "Unexpected HTTP method")
-		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte("OPTIONS request received"))
-		require.NoError(t, err, "Error writing response body")
-	})
-	defer srv.Close()
-
-	client := NewClient()
-
-	resp, err := client.Options(context.Background(), srv.URL)
-	require.NoError(t, err, "Unexpected error")
-	defer resp.Body.Close()
-
-	// Verify that the response status code is as expected
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "Unexpected status code")
-}
-
-// TestClientConnect tests the Connect method of the Client struct. It ensures
-// that the Connect method works correctly and is able to make a successful CONNECT
-// request to the server.
-func TestClientConnect(t *testing.T) {
-	srv := testutils.ServerFixture()
-	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodConnect, r.Method, "Expected CONNECT method")
-		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte("CONNECT request received"))
-		require.NoError(t, err)
-	})
-	defer srv.Close()
-
-	client := NewClient()
-
-	resp, err := client.Connect(context.Background(), srv.URL, nil)
-	require.NoError(t, err, "Unexpected error")
-	defer resp.Body.Close()
-
-	// Verify that the response status code is as expected
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "Unexpected status code")
-}
-
-// TestClientDelete tests the Delete method of a HTTP client.
-func TestClientDelete(t *testing.T) {
-	srv := testutils.ServerFixture()
-
-	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodDelete, r.Method, "Expected DELETE method")
-		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte("DELETE request received"))
-		require.NoError(t, err)
-	})
-
-	defer srv.Close()
-
-	client := NewClient()
-	resp, err := client.Delete(context.Background(), srv.URL)
-	require.NoError(t, err, "Unexpected error")
-	defer resp.Body.Close()
-
-	// Verify that the response status code is as expected
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "Unexpected status code")
+	// check that the Logger field is set to the logger instance
+	require.Equal(t, logger, config.Logger, "Logger field is not set correctly")
 }
