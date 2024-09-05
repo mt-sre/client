@@ -6,7 +6,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/go-logr/logr v1.2.0
 	github.com/stretchr/testify v1.9.0
-	golang.org/x/oauth2 v0.22.0
+	golang.org/x/oauth2 v0.23.0
 )
 
 require (
