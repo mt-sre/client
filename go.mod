@@ -1,6 +1,6 @@
 module github.com/mt-sre/client
 
-go 1.20
+go 1.23
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
