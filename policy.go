@@ -15,6 +15,7 @@ type RetryPolicy interface {
 	// IsErrorRetryable determines which url.Error
 	// instances can be retried.
 	IsErrorRetryable(error) bool
+
 	// IsStatusRetryableForMethod accepts a HTTP method
 	// name and a status code and returns 'true' if a
 	// given combination of the aforementioned parameters
